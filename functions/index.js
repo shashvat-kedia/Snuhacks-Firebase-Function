@@ -12,20 +12,25 @@ exports.sendMessage = functions.https.onRequest(async ((req,res) => {
     }
   }
   const allTokens = await (admin.database().ref('ref').once('value'))
-  console.log(allTokens)
-  if(allTokens.exists()){
-    var tokens = []
-    for(var i=0;i<allTokens.length;i++){
-      tokens.push(allTokens[i].val())
-      console.log(allTokens[i].val())
-    }
+  var resp = {
+    "result": "Tokens not present"
   }
-    //const reponse = admin.messaging().sendToDevice(tokens,payload)
-    //await cleanUp(response,tokens)
-    res.status(200)
+  if(allTokens.exists()){
+    const data = allTokens.val()
+    const keys = Object.keys(allTokens.val())
+    const tokens = []
+    for(var i=0;i<keys.length;i++){
+      tokens.push(data[keys[i]])
+    }
+    console.log(tokens)
+    const response = admin.messaging().sendToDevice(tokens,payload)
+    await (cleanUp(response, tokens,keys))
+    resp["result"] = "Success"
+  }
+    res.status(304).send(resp)
   }));
 
-function cleanUp(response,tokens){
+function cleanUp(response,tokens,keys){
   const tokensToRemove = {}
   response.results.forEach((result,index) => {
     const error = result.error
@@ -33,14 +38,9 @@ function cleanUp(response,tokens){
       console.error('Failure sending notification to', tokens[index], error)
       if (error.code === 'messaging/invalid-registration-token' ||
          error.code === 'messaging/registration-token-not-registered') {
-       tokensToRemove[`/fcmTokens/${tokens[index]}`] = null;
+       tokensToRemove[`/data/fcmTokens/${keys[index]}`] = null;
      }
     }
   })
+  return admin.database().ref().update(tokensToRemove)
 }
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
