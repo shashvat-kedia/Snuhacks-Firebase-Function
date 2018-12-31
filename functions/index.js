@@ -22,6 +22,7 @@ exports.sendMessage = functions.https.onRequest(async ((req,res) => {
       tokens.push(data[keys[i]])
     }
     const response = await (admin.messaging().sendToDevice(tokens,payload))
+    console.log(response)
     await (cleanUp(response, tokens,keys))
   }
     res.status(304).send("Success")
