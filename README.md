@@ -1,2 +1,2 @@
 # Snuhacks-server
-Server for Snuhacks
+Firebase Cloud Function(used for FCM) for Snuhacks
